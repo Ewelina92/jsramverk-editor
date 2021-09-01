@@ -1,18 +1,35 @@
 import React, { useState } from "react";
+import {
+	BrowserRouter as Router,
+	Switch,
+	Route,
+} from "react-router-dom";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import './App.css';
 import Toolbar from "./Toolbar";
+import DocumentList from "./DocumentList";
+import Navbar from "./Navbar";
 
 function App() {
-  const [value, setValue] = useState('');
+	const [value, setValue] = useState('');
 
-  return (
-    <>
-      <Toolbar value={value}/>
-      <ReactQuill theme="snow" value={value} onChange={setValue}/>
-    </>
-  );
+	return (
+		<>
+			<Navbar />
+			<Router>
+				<Switch>
+					<Route exact path="/">
+						<DocumentList />
+					</Route>
+					<Route path="/editor">
+						<Toolbar value={value} />
+						<ReactQuill theme="snow" value={value} onChange={setValue} />
+					</Route>
+				</Switch>
+			</Router>
+		</>
+	);
 }
 
 // import logo from './logo.svg';

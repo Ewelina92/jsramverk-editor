@@ -37,17 +37,34 @@
   }
 } */
 
-.quill, .Toolbar {
+body {
   max-width: 40rem;
   margin: 1rem auto;
 }
 
-.Toolbar button {
+.Navbar {
+  background-color: #dcdcdc;
+  border-bottom: 2px solid #a1a1a1;
+  text-align: center;
+  padding-top: 0.5rem;
+}
+
+/* .quill, .Toolbar, .DocumentList {
+  max-width: 40rem;
+  margin: 1rem auto;
+} */
+
+.Toolbar button, .newButton {
   display: flex;
   align-items: center;
 }
 
-.Toolbar button svg {
+.Toolbar button svg,
+.newButton svg {
   width: 1rem;
   margin-right: 0.2rem;
+}
+
+a {
+  text-decoration: none;
 }
