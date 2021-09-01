@@ -32,7 +32,7 @@ function DocumentList() {
 					<DocumentListItem key={index} document={document} />
 				)}
 			</ul>
-			<Link to="/editor">
+			<Link to={`${process.env.PUBLIC_URL}/editor`}>
 				<button className="newButton">
 					<PlusIcon />
 					Create New Document

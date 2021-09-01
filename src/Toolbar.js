@@ -85,7 +85,7 @@ function Toolbar({ title, content }) {
 				<SaveIcon />
 				Save
 			</button>
-			<Link to="/">
+			<Link to={`${process.env.PUBLIC_URL}/`}>
 				<button>
 					Back to all documents
 				</button>
