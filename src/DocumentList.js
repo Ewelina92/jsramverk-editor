@@ -1,24 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { PlusIcon } from '@heroicons/react/outline'
+import DocumentListItem from "./DocumentListItem";
 
 function DocumentList() {
 	const [documentList, setDocumentList] = useState([]);
 
 	// get all documents
 	useEffect(() => {
-		fetch('https://jsramverk-editor-eaja20.azurewebsites.net/documents')
+		const controller = new AbortController()
+    	const signal = controller.signal
+		var urlToFetch = 'https://jsramverk-editor-eaja20.azurewebsites.net/documents';
+
+        fetch(urlToFetch, {
+                method: 'get',
+                signal: signal,
+            })
 			.then(res => res.json())
-			.then(res => setDocumentList(res));
+			.then(res => setDocumentList(res))
+			.catch(e => console.log(e));
+		return function cleanup() {
+			// cancel fetch
+			controller.abort();
+		}
 	});
 
 	return (
 		<div className="DocumentList">
 			<ul>
 				{documentList.map((document, index) =>
-					<li key={index}>
-						<Link to={`/editor?id=${document._id}`}>{document.title}</Link> {/* send to correct "page" */}
-					</li>
+					<DocumentListItem key={index} document={document} />
 				)}
 			</ul>
 			<Link to="/editor">
