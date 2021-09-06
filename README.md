@@ -1,3 +1,8 @@
+### Travis CI [![Build Status](https://travis-ci.com/Ewelina92/jsramverk-editor.svg?branch=main)](https://travis-ci.com/Ewelina92/jsramverk-editor)
+
+# Editor
+I am currently developing a simple real-time collaborative document editor as a school assignment. 
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
