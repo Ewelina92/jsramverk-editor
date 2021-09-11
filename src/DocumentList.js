@@ -6,11 +6,14 @@ import DocumentListItem from "./DocumentListItem";
 function DocumentList() {
     const [documentList, setDocumentList] = useState([]);
 
+    // const ENDPOINT = "http://192.168.86.247:1337";
+    const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
+
     // get all documents
     useEffect(() => {
         const controller = new AbortController();
         const signal = controller.signal;
-        var urlToFetch = 'https://jsramverk-editor-eaja20.azurewebsites.net/documents';
+        const urlToFetch = `${ENDPOINT}/documents`;
 
         fetch(urlToFetch, {
             method: 'get',
@@ -23,7 +26,7 @@ function DocumentList() {
             // cancel fetch
             controller.abort();
         };
-    });
+    }, []);
 
     return (
         <div className="DocumentList">
