@@ -37,5 +37,7 @@ test('clicking button "Save" without title and content renders alert', () => {
     fireEvent.click(screen.getByText('Save'));
 
     expect(alertMock).toHaveBeenCalledTimes(1);
-    expect(alertMock).toHaveBeenCalledWith("Can't create a document without a title and content!");
+    expect(alertMock).toHaveBeenCalledWith(
+        "Can't create a document without a title and/or content!"
+    );
 });
