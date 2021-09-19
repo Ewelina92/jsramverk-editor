@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import PropTypes from 'prop-types';
 import { PlusIcon } from '@heroicons/react/outline';
 import DocumentListItem from "./DocumentListItem";
 
-function DocumentList() {
+function DocumentList({ token }) {
     const [documentList, setDocumentList] = useState([]);
 
-    // const ENDPOINT = "http://192.168.86.247:1337";
+    // const ENDPOINT = "http://localhost:1337";
     const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
 
     // get all documents
@@ -18,6 +19,9 @@ function DocumentList() {
         fetch(urlToFetch, {
             method: 'get',
             signal: signal,
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
         })
             .then(res => res.json())
             .then(res => setDocumentList(res))
@@ -30,6 +34,7 @@ function DocumentList() {
 
     return (
         <div className="DocumentList">
+            <h2>Your documents</h2>
             <ul>
                 {documentList.map((document, index) =>
                     <DocumentListItem key={index} document={document} />
@@ -44,5 +49,9 @@ function DocumentList() {
         </div>
     );
 }
+
+DocumentList.propTypes = {
+    token: PropTypes.string.isRequired,
+};
 
 export default DocumentList;

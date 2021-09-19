@@ -1,14 +1,15 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useParams, useHistory } from "react-router-dom";
+import PropTypes from 'prop-types';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import Toolbar from "./Toolbar";
 import io from "socket.io-client";
 
-// const ENDPOINT = "http://192.168.86.247:1337";
+// const ENDPOINT = "http://localhost:1337";
 const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
 
-function Editor() {
+function Editor({ token }) {
     const [editorValue, setEditorValue] = useState('');
     const [documentTitle, setDocumentTitle] = useState('');
     const [lastDelta, setLastDelta] = useState({});
@@ -63,6 +64,9 @@ function Editor() {
         fetch(urlToFetch, {
             method: 'get',
             signal: signal,
+            headers: {
+                "Authorization": `Bearer ${token}`,
+            }
         })
             .then(res => res.json())
             .then(res => {
@@ -119,7 +123,8 @@ function Editor() {
             }),
             // Adding headers to the request
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-type": "application/json; charset=UTF-8",
+                "Authorization": `Bearer ${token}`,
             }
         })
             .then(() => {
@@ -153,7 +158,8 @@ function Editor() {
             }),
             // Adding headers to the request
             headers: {
-                "Content-type": "application/json; charset=UTF-8"
+                "Content-type": "application/json; charset=UTF-8",
+                "Authorization": `Bearer ${token}`,
             }
         })
             .then(response => response.json())
@@ -171,22 +177,26 @@ function Editor() {
 
     return (
         <>
-            <Toolbar save={saveDocument} />
-            <form>
+            <Toolbar save={saveDocument} documentID={id} token={token} />
+            <div className="content">
                 <input
                     type="text"
                     value={documentTitle}
                     onChange={(e) => setDocumentTitle(e.target.value)}
                 />
-            </form>
-            <ReactQuill
-                ref={quill}
-                theme="snow"
-                value={editorValue}
-                onChange={handleEditorChange}
-            />
+                <ReactQuill
+                    ref={quill}
+                    theme="snow"
+                    value={editorValue}
+                    onChange={handleEditorChange}
+                />
+            </div>
         </>
     );
 }
+
+Editor.propTypes = {
+    token: PropTypes.string.isRequired,
+};
 
 export default Editor;

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from 'react';
 import {
     BrowserRouter as Router,
     Switch,
@@ -9,23 +9,50 @@ import './App.css';
 import DocumentList from "./DocumentList";
 import Navbar from "./Navbar";
 import Editor from "./Editor";
+import Login from "./Login";
+import Register from "./Register";
 
 function App() {
-    console.log(`here: ${process.env.PUBLIC_URL}`);
+    const [token, setToken] = useState();
+
+    const logout = () => {
+        localStorage.removeItem('token');
+        setToken(undefined);
+    };
+
+    const storedToken = localStorage.getItem('token');
+
+    if (!token && storedToken) {
+        setToken(storedToken);
+    }
+
     return (
         <>
-            <Navbar />
             <Router>
+                <Navbar token={token} logout={logout}/>
                 <Switch>
-                    <Route exact path={`${process.env.PUBLIC_URL}/`}>
-                        <DocumentList />
-                    </Route>
-                    <Route exact path={`${process.env.PUBLIC_URL}/editor`}>
-                        <Editor />
-                    </Route>
-                    <Route path={`${process.env.PUBLIC_URL}/editor/:id`}>
-                        <Editor />
-                    </Route>
+                    {token ?
+                        <>
+                            <Route exact path={`${process.env.PUBLIC_URL}/`}>
+                                <DocumentList token={token} />
+                            </Route>
+                            <Route exact path={`${process.env.PUBLIC_URL}/editor`}>
+                                <Editor token={token} />
+                            </Route>
+                            <Route path={`${process.env.PUBLIC_URL}/editor/:id`}>
+                                <Editor token={token} />
+                            </Route>
+                        </>
+                        :
+                        <>
+                            <Route exact path={`${process.env.PUBLIC_URL}/`}>
+                                <Login setToken={setToken} />
+                            </Route>
+                            <Route path={`${process.env.PUBLIC_URL}/signup`}>
+                                <Register />
+                            </Route>
+                        </>
+                    }
                 </Switch>
             </Router>
         </>

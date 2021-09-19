@@ -1,12 +1,12 @@
 import React from "react";
 import { render, screen, fireEvent } from '@testing-library/react';
-import {BrowserRouter} from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 
-const renderWithRouter = (ui, {route = '/'} = {}) => {
+const renderWithRouter = (ui, { route = '/' } = {}) => {
     window.history.pushState({}, 'Test page', route);
 
-    return render(ui, {wrapper: BrowserRouter});
+    return render(ui, { wrapper: BrowserRouter });
 };
 
 
@@ -17,21 +17,27 @@ test('renders navbar', () => {
     expect(navElement).toBeInTheDocument();
 });
 
-test('clicking button "Create New Document" renders editor', () => {
+test('clicking link "create your account" renders register', () => {
     renderWithRouter(<App />);
-    fireEvent.click(screen.getByText('Create New Document'));
-    expect(screen.getByText('Save')).toBeInTheDocument();
-    expect(screen.getByText('Back to all documents')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('create your account'));
+    expect(screen.getByText('Register')).toBeInTheDocument();
 });
 
-test('clicking button "Back to all documents" renders first page', () => {
-    renderWithRouter(<App />, {route: '/editor'});
-    fireEvent.click(screen.getByText('Back to all documents'));
-    expect(screen.getByText('Create New Document')).toBeInTheDocument();
+test('clicking link "login" renders first page', () => {
+    renderWithRouter(<App />, { route: '/signup' });
+    fireEvent.click(screen.getByText('login'));
+    expect(screen.getByText('Login')).toBeInTheDocument();
 });
 
 test('clicking button "Save" without title and content renders alert', () => {
-    renderWithRouter(<App />, {route: '/editor'});
+    global.localStorage = {
+        store: {},
+        getItem: (key)=>this.store[key],
+        setItem: (key, value)=> this.store[key] = value
+    };
+    global.localStorage.setItem("token", "mocked-token");
+
+    renderWithRouter(<App />, { route: '/editor' });
     const alertMock = jest.spyOn(window, 'alert').mockImplementation();
 
     fireEvent.click(screen.getByText('Save'));
