@@ -1,6 +1,6 @@
 {
   "name": "editor",
-  "version": "4.0.0",
+  "version": "v5.0.0",
   "private": true,
   "homepage": "http://www.student.bth.se/~eaja20/editor/",
   "dependencies": {
