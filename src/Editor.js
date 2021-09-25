@@ -64,8 +64,8 @@ const UPDATE_DOCUMENT = gql`
 `;
 
 
-const ENDPOINT = "http://localhost:1337";
-// const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
+// const ENDPOINT = "http://localhost:1337";
+const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
 
 function Editor({ token }) {
     const { id } = useParams(); // grab id
