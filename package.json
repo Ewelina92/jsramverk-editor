@@ -4,10 +4,12 @@
   "private": true,
   "homepage": "http://www.student.bth.se/~eaja20/editor/",
   "dependencies": {
+    "@apollo/client": "^3.4.13",
     "@heroicons/react": "^1.0.4",
     "@testing-library/jest-dom": "^5.11.4",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^13.2.1",
+    "graphql": "^15.6.0",
     "prop-types": "^15.7.2",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",

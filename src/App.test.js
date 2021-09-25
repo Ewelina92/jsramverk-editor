@@ -1,4 +1,11 @@
 import React from "react";
+import {
+    ApolloClient,
+    InMemoryCache,
+    ApolloProvider,
+    createHttpLink,
+} from "@apollo/client";
+import { setContext } from '@apollo/client/link/context';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
@@ -8,6 +15,30 @@ const renderWithRouter = (ui, { route = '/' } = {}) => {
 
     return render(ui, { wrapper: BrowserRouter });
 };
+
+const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
+
+const httpLink = createHttpLink({
+    uri: `${ENDPOINT}/graphql`,
+});
+
+const authLink = setContext((_, { headers }) => {
+    // get the authentication token from local storage if it exists
+    const token = localStorage.getItem('token');
+
+    return {
+        headers: {
+            ...headers,
+            authorization: token ? `Bearer ${token}` : "",
+        }
+    };
+});
+
+const client = new ApolloClient({
+    uri: 'http://localhost:1337',
+    link: authLink.concat(httpLink),
+    cache: new InMemoryCache()
+});
 
 
 test('renders navbar', () => {
@@ -37,7 +68,9 @@ test('clicking button "Save" without title and content renders alert', () => {
     };
     global.localStorage.setItem("token", "mocked-token");
 
-    renderWithRouter(<App />, { route: '/editor' });
+    renderWithRouter(<ApolloProvider client={client}>
+        <App />
+    </ApolloProvider>, { route: '/editor' });
     const alertMock = jest.spyOn(window, 'alert').mockImplementation();
 
     fireEvent.click(screen.getByText('Save'));

@@ -1,46 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { gql, useMutation } from '@apollo/client';
 import { Link } from "react-router-dom";
 import { SaveIcon } from '@heroicons/react/outline';
 import PropTypes from 'prop-types';
 
-// const ENDPOINT = "http://localhost:1337";
-const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
+const ADD_COLLABORATOR = gql`
+  mutation addCollaborator($documentId: String!, $email: String!) {
+    addCollaborator(documentId: $documentId, email: $email) {
+      _id
+    }
+  }
+`;
 
-function Toolbar({ save, token, documentID }) {
+function Toolbar({ save, documentID }) {
     const [email, setEmail] = useState("");
+    const [hideAlert, setHideAlert] = useState(false);
+    const [addCollaborator, { data, loading }] = useMutation(ADD_COLLABORATOR);
 
-    const addCollaborator = () => {
-        const controller = new AbortController();
-        const signal = controller.signal;
-
-        fetch(`${ENDPOINT}/permissions/${documentID}`, {
-            method: "PUT",
-            signal: signal,
-            // Adding body or contents to send
-            body: JSON.stringify({
-                email: email,
-            }),
-            // Adding headers to the request
-            headers: {
-                "Content-type": "application/json; charset=UTF-8",
-                "Authorization": `Bearer ${token}`,
-            }
-        })
-            .then(res => res.json())
-            .then((res) => {
-                console.log(res);
-                setEmail("");
-                if (res.modifiedCount) {
-                    alert("Added new collaborator to the document!");
-                }
-            })
-            .catch(e => console.log(e));
-
-        return function cleanup() {
-            // cancel fetch
-            controller.abort();
-        };
-    };
+    useEffect(() => {
+        setHideAlert(false);
+    }, [loading]);
 
     return (
         <div className="Toolbar">
@@ -70,8 +49,29 @@ function Toolbar({ save, token, documentID }) {
                     <input
                         type="button"
                         value="Add"
-                        onClick={addCollaborator}
+                        onClick={e => {
+                            e.preventDefault();
+                            addCollaborator({
+                                variables: {
+                                    documentId: documentID,
+                                    email: email
+                                }
+                            });
+                            setEmail("");
+                        }}
                     />
+                    {loading &&
+                    <span>
+                        Submitting...
+                    </span>
+                    }
+                    {data &&
+                    !hideAlert &&
+                    <div>
+                        Added collaborator!
+                        <span onClick={() => setHideAlert(true)}>X</span>
+                    </div>
+                    }
                 </div>
             }
         </div>
@@ -80,7 +80,6 @@ function Toolbar({ save, token, documentID }) {
 
 Toolbar.propTypes = {
     save: PropTypes.func.isRequired,
-    token: PropTypes.string.isRequired,
     documentID: PropTypes.string,
 };
 

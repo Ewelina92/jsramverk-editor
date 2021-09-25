@@ -1,42 +1,38 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
-import PropTypes from 'prop-types';
+import { gql, useQuery } from '@apollo/client';
 import { PlusIcon } from '@heroicons/react/outline';
 import DocumentListItem from "./DocumentListItem";
 
-function DocumentList({ token }) {
-    const [documentList, setDocumentList] = useState([]);
+const GET_DOCUMENTS = gql`
+  query documents {
+  documents {
+        _id
+        title
+        content
+        owner {
+            _id
+            email
+        }
+        collaborators {
+            _id
+            email
+        }
+    }
+  }
+`;
 
-    // const ENDPOINT = "http://localhost:1337";
-    const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
+function DocumentList() {
+    const { loading, error, data } = useQuery(GET_DOCUMENTS);
 
-    // get all documents
-    useEffect(() => {
-        const controller = new AbortController();
-        const signal = controller.signal;
-        const urlToFetch = `${ENDPOINT}/documents`;
-
-        fetch(urlToFetch, {
-            method: 'get',
-            signal: signal,
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        })
-            .then(res => res.json())
-            .then(res => setDocumentList(res))
-            .catch(e => console.log(e));
-        return function cleanup() {
-            // cancel fetch
-            controller.abort();
-        };
-    }, []);
+    if (loading) { return 'Loading...'; }
+    if (error) { return `Error! ${error.message}`; }
 
     return (
         <div className="DocumentList">
             <h2>Your documents</h2>
             <ul>
-                {documentList.map((document, index) =>
+                {data.documents.map((document, index) =>
                     <DocumentListItem key={index} document={document} />
                 )}
             </ul>
@@ -49,9 +45,5 @@ function DocumentList({ token }) {
         </div>
     );
 }
-
-DocumentList.propTypes = {
-    token: PropTypes.string.isRequired,
-};
 
 export default DocumentList;
