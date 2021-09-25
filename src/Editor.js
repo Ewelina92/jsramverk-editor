@@ -64,8 +64,8 @@ const UPDATE_DOCUMENT = gql`
 `;
 
 
-// const ENDPOINT = "http://localhost:1337";
-const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
+const ENDPOINT = "http://localhost:1337";
+// const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
 
 function Editor({ token }) {
     const { id } = useParams(); // grab id
@@ -119,7 +119,30 @@ function Editor({ token }) {
 
         // Send our new changes
         socketRef.current.emit("doc_content", delta);
+
+        console.log("doc_content", delta, socketRef);
     };
+
+    useEffect(() => {
+        if (!id) {
+            return;
+        }
+
+        // connect to this document's room
+        socketRef.current.emit("open", id);
+        console.log("opened", id);
+
+        // subscribe to document changes
+        socketRef.current.on("doc_content", function (delta) {
+            setLastDelta(delta);
+            quill.current.getEditor().updateContents(delta);
+        });
+
+        return function cleanup() {
+            // unsubscribe to document changes
+            socketRef.current.off('doc_content');
+        };
+    }, [id]);
 
     useEffect(() => {
         setHideAlert(false);

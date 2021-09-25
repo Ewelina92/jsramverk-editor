@@ -11,8 +11,8 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
-// const ENDPOINT = "http://localhost:1337";
-const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
+const ENDPOINT = "http://localhost:1337";
+// const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
 
 const httpLink = createHttpLink({
     uri: `${ENDPOINT}/graphql`,
