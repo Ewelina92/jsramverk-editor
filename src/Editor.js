@@ -123,6 +123,41 @@ function Editor({ token }) {
         console.log("doc_content", delta, socketRef);
     };
 
+    const exportPDF = async () => {
+        const controller = new AbortController();
+        const signal = controller.signal;
+
+        fetch(`${ENDPOINT}/pdf`, {
+            method: "POST",
+            signal: signal,
+            // Adding body or contents to send
+            body: JSON.stringify({
+                html: quill.current.getEditor().root.innerHTML,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json; charset=UTF-8"
+            }
+        })
+            .then(res => res.arrayBuffer())
+            .then(res => {
+                const file = new Blob([res], {type: 'application/pdf'});
+
+                const fileURL = URL.createObjectURL(file);
+                const link = document.createElement('a');
+
+                link.href = fileURL;
+                link.download = `${documentTitle}.pdf`;
+                link.click();
+            })
+            .catch(e => console.log(e));
+
+        return function cleanup() {
+            // cancel fetch
+            controller.abort();
+        };
+    };
+
     useEffect(() => {
         if (!id) {
             return;
@@ -190,7 +225,7 @@ function Editor({ token }) {
 
     return (
         <>
-            <Toolbar save={saveDocument} documentID={id} token={token} />
+            <Toolbar save={saveDocument} exportPDF={exportPDF} documentID={id} token={token} />
             <div className="content">
                 {(createObj.data || updateObj.data) &&
                     !hideAlert &&

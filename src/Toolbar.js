@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { gql, useMutation } from '@apollo/client';
 import { Link } from "react-router-dom";
-import { SaveIcon } from '@heroicons/react/outline';
+import { CloudUploadIcon, DocumentDownloadIcon } from '@heroicons/react/outline';
 import PropTypes from 'prop-types';
 
 const ADD_COLLABORATOR = gql`
@@ -12,7 +12,7 @@ const ADD_COLLABORATOR = gql`
   }
 `;
 
-function Toolbar({ save, documentID }) {
+function Toolbar({ save, exportPDF, documentID }) {
     const [email, setEmail] = useState("");
     const [hideAlert, setHideAlert] = useState(false);
     const [addCollaborator, { data, loading }] = useMutation(ADD_COLLABORATOR);
@@ -26,8 +26,14 @@ function Toolbar({ save, documentID }) {
             <button
                 onClick={save}
             >
-                <SaveIcon />
+                <CloudUploadIcon />
                 Save
+            </button>
+            <button
+                onClick={exportPDF}
+            >
+                <DocumentDownloadIcon/>
+                Export to PDF
             </button>
             <Link to={`${process.env.PUBLIC_URL}/`}>
                 <button>
@@ -80,6 +86,7 @@ function Toolbar({ save, documentID }) {
 
 Toolbar.propTypes = {
     save: PropTypes.func.isRequired,
+    exportPDF: PropTypes.func.isRequired,
     documentID: PropTypes.string,
 };
 
