@@ -6,6 +6,7 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import Toolbar from "./Toolbar";
 import io from "socket.io-client";
+import CommentList from "./CommentList";
 
 const GET_DOCUMENTS = gql`
   query documents {
@@ -31,6 +32,7 @@ const GET_SINGLE_DOCUMENT = gql`
         _id
         title
         content
+        comments
         owner {
             _id
             email
@@ -44,21 +46,23 @@ const GET_SINGLE_DOCUMENT = gql`
 `;
 
 const CREATE_DOCUMENT = gql`
-  mutation createDocument($title: String!, $content: String!) {
-    createDocument(title: $title, content: $content) {
+  mutation createDocument($title: String!, $content: String!, $comments: String) {
+    createDocument(title: $title, content: $content, comments: $comments) {
       _id
       title
       content
+      comments
     }
   }
 `;
 
 const UPDATE_DOCUMENT = gql`
-  mutation updateDocument($_id: String!, $title: String!, $content: String!) {
-    updateDocument(_id: $_id, title: $title, content: $content) {
+  mutation updateDocument($_id: String!, $title: String!, $content: String!, $comments: String) {
+    updateDocument(_id: $_id, title: $title, content: $content, comments: $comments) {
       _id
       title
       content
+      comments
     }
   }
 `;
@@ -83,6 +87,7 @@ function Editor({ token }) {
     });
     const [editorValue, setEditorValue] = useState('');
     const [documentTitle, setDocumentTitle] = useState('');
+    const [comments, setComments] = useState([]);
     const [hideAlert, setHideAlert] = useState(false);
     const [lastDelta, setLastDelta] = useState({});
     const socketRef = useRef();
@@ -108,11 +113,60 @@ function Editor({ token }) {
         // update state first
         setEditorValue(content);
 
+        const newDelta = delta.ops.slice(0, -1);
+        const oldDelta = quill.current.getEditor().editor.delta.ops;
+
+        let deltasAreSame = false;
+
+        // Is this change the same as the current value of the editor?
+        // If deltas are the same, nothing changed so we ignore.
+        if (newDelta.length == oldDelta.length) {
+            deltasAreSame = true;
+            for (let i = 0; i < newDelta.length; i++) {
+                if (Object.keys(oldDelta[i]).length !== Object.keys(newDelta[i]).length
+                    || Object.keys(oldDelta[i]).every(p => oldDelta[i][p] !== newDelta[i][p])) {
+                    console.log("broken", oldDelta[i], newDelta[i]);
+                    deltasAreSame = false;
+                    break;
+                }
+            }
+        }
+        if (deltasAreSame) {
+            return;
+        }
+
         // If our last saved operations are the same, stop
+        // This happens on the receiving client and prevents infinite loop
         if (JSON.stringify(lastDelta.ops) ===
             JSON.stringify(delta.ops)) {
             return;
         }
+
+        let from = 0;
+
+        let difference = 0;
+
+        for (const op of delta.ops) {
+            if (op.retain) {
+                from += op.retain;
+            }
+            if (op.delete) {
+                from += op.delete;
+                difference -= op.delete;
+            }
+            if (op.insert) {
+                difference += op.insert.length;
+            }
+        }
+
+        let commentsClone = [...comments];
+
+        for (let i = 0; i < commentsClone.length; i++) {
+            if (commentsClone[i].range.index > from) {
+                commentsClone[i].range.index = commentsClone[i].range.index + difference;
+            }
+        }
+        setComments(commentsClone);
 
         // Update our last change
         setLastDelta(delta);
@@ -158,6 +212,40 @@ function Editor({ token }) {
         };
     };
 
+    const createComment = (commentText) => {
+        const selectionRange = quill.current.getEditorSelection();
+
+        if (!selectionRange || selectionRange.length == 0) {
+            return;
+        }
+
+        const ops = [];
+
+        if (selectionRange.index !== 0) {
+            ops.push({ retain: selectionRange.index });
+        }
+
+        ops.push({
+            retain: selectionRange.length,
+            attributes: {
+                background: '#ffffb0',
+            },
+        });
+
+        quill.current.getEditor().updateContents({
+            ops: ops,
+        });
+
+        const newComment = {
+            message: commentText,
+            range: selectionRange,
+        };
+
+        socketRef.current.emit("new_comment", newComment);
+
+        setComments([...comments, newComment]);
+    };
+
     useEffect(() => {
         if (!id) {
             return;
@@ -173,9 +261,15 @@ function Editor({ token }) {
             quill.current.getEditor().updateContents(delta);
         });
 
+        // subscribe to new comments
+        socketRef.current.on("new_comment", function (newComment) {
+            setComments([...comments, newComment]);
+        });
+
         return function cleanup() {
             // unsubscribe to document changes
             socketRef.current.off('doc_content');
+            socketRef.current.off('new_comment');
         };
     }, [id]);
 
@@ -193,6 +287,11 @@ function Editor({ token }) {
         if (!loading && !!data) {
             setSkipLoading(true);
             setEditorValue(JSON.parse(data.document.content));
+            try {
+                setComments(JSON.parse(data.document.comments));
+            } catch (e) {
+                setComments([]);
+            }
             setDocumentTitle(data.document.title);
         }
     }, [data, loading]);
@@ -211,6 +310,7 @@ function Editor({ token }) {
                     _id: id,
                     title: documentTitle,
                     content: JSON.stringify(quill.current.getEditor().editor.delta),
+                    comments: JSON.stringify(comments),
                 }
             });
             return;
@@ -219,13 +319,20 @@ function Editor({ token }) {
             variables: {
                 title: documentTitle,
                 content: JSON.stringify(quill.current.getEditor().editor.delta),
+                comments: JSON.stringify(comments),
             }
         });
     }
 
     return (
         <>
-            <Toolbar save={saveDocument} exportPDF={exportPDF} documentID={id} token={token} />
+            <Toolbar
+                save={saveDocument}
+                exportPDF={exportPDF}
+                comment={createComment}
+                documentID={id}
+                token={token}
+            />
             <div className="content">
                 {(createObj.data || updateObj.data) &&
                     !hideAlert &&
@@ -247,6 +354,7 @@ function Editor({ token }) {
                     onChange={handleEditorChange}
                 />
             </div>
+            <CommentList comments={comments} />
         </>
     );
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { gql, useMutation } from '@apollo/client';
 import { Link } from "react-router-dom";
-import { CloudUploadIcon, DocumentDownloadIcon } from '@heroicons/react/outline';
+import { CloudUploadIcon, DocumentDownloadIcon, ChatAltIcon } from '@heroicons/react/outline';
 import PropTypes from 'prop-types';
 
 const ADD_COLLABORATOR = gql`
@@ -12,8 +12,9 @@ const ADD_COLLABORATOR = gql`
   }
 `;
 
-function Toolbar({ save, exportPDF, documentID }) {
+function Toolbar({ save, exportPDF, comment, documentID }) {
     const [email, setEmail] = useState("");
+    const [commentText, setCommentText] = useState("");
     const [hideAlert, setHideAlert] = useState(false);
     const [addCollaborator, { data, loading }] = useMutation(ADD_COLLABORATOR);
 
@@ -34,6 +35,24 @@ function Toolbar({ save, exportPDF, documentID }) {
             >
                 <DocumentDownloadIcon/>
                 Export to PDF
+            </button>
+            <div>
+                <input className="InputField"
+                    value={commentText}
+                    onChange={(e) => setCommentText(e.target.value)}
+                    name="comment"
+                    type="comment"
+                />
+            </div>
+            <button
+                onClick={e => {
+                    e.preventDefault();
+                    comment(commentText);
+                    setCommentText("");
+                }}
+            >
+                <ChatAltIcon/>
+                Comment
             </button>
             <Link to={`${process.env.PUBLIC_URL}/`}>
                 <button>
@@ -87,6 +106,7 @@ function Toolbar({ save, exportPDF, documentID }) {
 Toolbar.propTypes = {
     save: PropTypes.func.isRequired,
     exportPDF: PropTypes.func.isRequired,
+    comment: PropTypes.func.isRequired,
     documentID: PropTypes.string,
 };
 

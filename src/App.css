@@ -3,6 +3,11 @@ body {
   background-color: #F8F9FA;
 }
 
+#root {
+  display: grid;
+  grid-auto-flow: row;
+}
+
 .Navbar {
   display: grid;
   padding: 0 1rem;
@@ -26,6 +31,8 @@ body {
 
 .content {
   box-shadow: rgb(60 64 67 / 15%) 0px 3px 3px 1px;
+  justify-self: center;
+  max-width: 48rem;
 }
 
 .DocumentList {
@@ -113,4 +120,16 @@ ul li a {
 
 ul li a:hover {
   color: #202124;
+}
+
+.CommentList {
+  display: grid;
+  justify-self: center;
+  grid-auto-rows: max-content;
+}
+
+.CommentList li {
+  background-color: #fff;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
