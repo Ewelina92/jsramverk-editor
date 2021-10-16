@@ -32,7 +32,26 @@ body {
 .content {
   box-shadow: rgb(60 64 67 / 15%) 0px 3px 3px 1px;
   justify-self: center;
-  max-width: 48rem;
+  width: 52rem;
+}
+
+.content input {
+  min-width: 12rem;
+  width: auto;
+  font-weight: 400;
+  font-size: 1.125rem;
+  border: 1px solid rgba(60, 64, 67, 0);
+  border-radius: 2px;
+}
+
+.content input:hover {
+  border-color: rgba(60, 64, 67, 0.1);
+  box-shadow: rgba(60, 64, 67, 0.05) 0 0 0 1px;
+}
+.content input:active, .content input:focus {
+  border-color: rgba(60, 64, 67, 0.15);
+  outline: none;
+  box-shadow: rgb(96, 165, 250) 0 0 0 3px;
 }
 
 .DocumentList {
@@ -54,6 +73,10 @@ body {
 .ql-container.ql-snow {
   border: 0;
   min-height: 12rem;
+}
+
+.ql-editor {
+  min-height: 54rem;
 }
 
 .Toolbar {
@@ -122,7 +145,15 @@ ul li a:hover {
   color: #202124;
 }
 
+.main-pane {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-columns: 1fr auto;
+}
+
 .CommentList {
+  width: 18rem;
+  margin-right: 1rem;
   display: grid;
   justify-self: center;
   grid-auto-rows: max-content;
@@ -130,6 +161,33 @@ ul li a:hover {
 
 .CommentList li {
   background-color: #fff;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  display: flex;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  border: 1px solid rgba(60, 64, 67, 0.15);
+  cursor: pointer;
+}
+
+.CommentList li:hover {
+  border-color: rgba(60, 64, 67, 0);
+  box-shadow: rgba(60, 64, 67, 0.15) 0px 1px 3px 1px;
+}
+
+.CommentList button {
+  border: none;
+  border-radius: 4px;
+  width: 2rem;
+  height: 2rem;
+  background: none;
+  cursor: pointer;
+}
+
+.CommentList button:hover, .CommentList button:active, .CommentList button:focus {
+  background: rgba(60, 64, 67, 0.08);
+}
+
+.CommentList button svg {
+  color: rgb(37, 99, 235);
+  width: 100%;
 }

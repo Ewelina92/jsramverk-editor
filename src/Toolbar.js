@@ -42,13 +42,18 @@ function Toolbar({ save, exportPDF, comment, documentID }) {
                     onChange={(e) => setCommentText(e.target.value)}
                     name="comment"
                     type="comment"
+                    placeholder="First write, then select the text"
                 />
             </div>
             <button
                 onClick={e => {
                     e.preventDefault();
-                    comment(commentText);
-                    setCommentText("");
+                    if (comment(commentText)) {
+                        setCommentText("");
+                    } else {
+                        alert("Write the comment text first, then select where you"+
+                        " want the comment to appear and click the comment button");
+                    }
                 }}
             >
                 <ChatAltIcon/>

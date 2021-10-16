@@ -216,7 +216,7 @@ function Editor({ token }) {
         const selectionRange = quill.current.getEditorSelection();
 
         if (!selectionRange || selectionRange.length == 0) {
-            return;
+            return false;
         }
 
         const ops = [];
@@ -244,6 +244,8 @@ function Editor({ token }) {
         socketRef.current.emit("new_comment", newComment);
 
         setComments([...comments, newComment]);
+
+        return true;
     };
 
     useEffect(() => {
@@ -324,6 +326,40 @@ function Editor({ token }) {
         });
     }
 
+    const setSelection = (range) => {
+        quill.current.setEditorSelection(quill.current.getEditor(), range);
+    };
+
+    const removeComment = (index) => {
+        const selectionRange = comments[index].range;
+
+        if (!selectionRange || selectionRange.length == 0) {
+            return;
+        }
+
+        const ops = [];
+
+        if (selectionRange.index !== 0) {
+            ops.push({ retain: selectionRange.index });
+        }
+
+        ops.push({
+            retain: selectionRange.length,
+            attributes: {
+                background: '',
+            },
+        });
+
+        quill.current.getEditor().updateContents({
+            ops: ops,
+        });
+
+        let commentsCopy = [...comments];
+
+        commentsCopy.splice(index, 1);
+        setComments(commentsCopy);
+    };
+
     return (
         <>
             <Toolbar
@@ -333,28 +369,34 @@ function Editor({ token }) {
                 documentID={id}
                 token={token}
             />
-            <div className="content">
-                {(createObj.data || updateObj.data) &&
-                    !hideAlert &&
-                    <div>
-                        Saved!
-                        <span onClick={() => setHideAlert(true)}>X</span>
-                    </div>
-                }
-                {(createObj.loading || updateObj.loading) && <div>Submitting...</div>}
-                <input
-                    type="text"
-                    value={documentTitle}
-                    onChange={(e) => setDocumentTitle(e.target.value)}
-                />
-                <ReactQuill
-                    ref={quill}
-                    theme="snow"
-                    value={editorValue}
-                    onChange={handleEditorChange}
+            <div className="main-pane">
+                <div className="content">
+                    {(createObj.data || updateObj.data) &&
+                        !hideAlert &&
+                        <div>
+                            Saved!
+                            <span onClick={() => setHideAlert(true)}>X</span>
+                        </div>
+                    }
+                    {(createObj.loading || updateObj.loading) && <div>Submitting...</div>}
+                    <input
+                        type="text"
+                        value={documentTitle}
+                        onChange={(e) => setDocumentTitle(e.target.value)}
+                    />
+                    <ReactQuill
+                        ref={quill}
+                        theme="snow"
+                        value={editorValue}
+                        onChange={handleEditorChange}
+                    />
+                </div>
+                <CommentList
+                    comments={comments}
+                    setSelection={setSelection}
+                    removeComment={removeComment}
                 />
             </div>
-            <CommentList comments={comments} />
         </>
     );
 }
