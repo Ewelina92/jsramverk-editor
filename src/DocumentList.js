@@ -10,6 +10,7 @@ const GET_DOCUMENTS = gql`
         _id
         title
         content
+        kind
         owner {
             _id
             email

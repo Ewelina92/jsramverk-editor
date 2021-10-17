@@ -7,6 +7,8 @@ import 'react-quill/dist/quill.snow.css';
 import Toolbar from "./Toolbar";
 import io from "socket.io-client";
 import CommentList from "./CommentList";
+import {default as CodeEditor} from "@monaco-editor/react";
+
 
 const GET_DOCUMENTS = gql`
   query documents {
@@ -14,6 +16,7 @@ const GET_DOCUMENTS = gql`
         _id
         title
         content
+        kind
         owner {
             _id
             email
@@ -33,6 +36,7 @@ const GET_SINGLE_DOCUMENT = gql`
         title
         content
         comments
+        kind
         owner {
             _id
             email
@@ -46,10 +50,11 @@ const GET_SINGLE_DOCUMENT = gql`
 `;
 
 const CREATE_DOCUMENT = gql`
-  mutation createDocument($title: String!, $content: String!, $comments: String) {
-    createDocument(title: $title, content: $content, comments: $comments) {
+  mutation createDocument($title: String!, $content: String!, $comments: String, $kind: String) {
+    createDocument(title: $title, content: $content, comments: $comments, kind: $kind) {
       _id
       title
+      kind
       content
       comments
     }
@@ -74,6 +79,7 @@ const ENDPOINT = "https://jsramverk-editor-eaja20.azurewebsites.net";
 function Editor({ token }) {
     const { id } = useParams(); // grab id
     const [skipLoading, setSkipLoading] = useState(false);
+    const [isCodeMode, setCodeMode] = useState(false);
     const history = useHistory();
     const { loading, error, data } = useQuery(GET_SINGLE_DOCUMENT, {
         variables: { _id: id },
@@ -92,6 +98,7 @@ function Editor({ token }) {
     const [lastDelta, setLastDelta] = useState({});
     const socketRef = useRef();
     const quill = useRef(null);
+    const monacoEditor = useRef(null);
 
     useEffect(() => {
         const socket = io.connect(ENDPOINT);
@@ -104,9 +111,13 @@ function Editor({ token }) {
         };
     }, []);
 
+    function handleEditorDidMount(editor) {
+        monacoEditor.current = editor;
+    }
+
     const handleEditorChange = (content, delta) => {
         // Ignore the changeEvent if this is the initial content load
-        if (!editorValue) {
+        if (!editorValue || isCodeMode) {
             return;
         }
 
@@ -125,7 +136,6 @@ function Editor({ token }) {
             for (let i = 0; i < newDelta.length; i++) {
                 if (Object.keys(oldDelta[i]).length !== Object.keys(newDelta[i]).length
                     || Object.keys(oldDelta[i]).every(p => oldDelta[i][p] !== newDelta[i][p])) {
-                    console.log("broken", oldDelta[i], newDelta[i]);
                     deltasAreSame = false;
                     break;
                 }
@@ -173,11 +183,12 @@ function Editor({ token }) {
 
         // Send our new changes
         socketRef.current.emit("doc_content", delta);
-
-        console.log("doc_content", delta, socketRef);
     };
 
     const exportPDF = async () => {
+        if (isCodeMode) {
+            return;
+        }
         const controller = new AbortController();
         const signal = controller.signal;
 
@@ -255,7 +266,6 @@ function Editor({ token }) {
 
         // connect to this document's room
         socketRef.current.emit("open", id);
-        console.log("opened", id);
 
         // subscribe to document changes
         socketRef.current.on("doc_content", function (delta) {
@@ -288,7 +298,13 @@ function Editor({ token }) {
     useEffect(() => {
         if (!loading && !!data) {
             setSkipLoading(true);
-            setEditorValue(JSON.parse(data.document.content));
+            setCodeMode((data.document.kind !== "Document"));
+            if (data.document.kind !== "Document") {
+                setEditorValue(data.document.content);
+            } else {
+                setEditorValue(JSON.parse(data.document.content));
+            }
+
             try {
                 setComments(JSON.parse(data.document.comments));
             } catch (e) {
@@ -302,16 +318,30 @@ function Editor({ token }) {
     if (error) { return `Error! ${error.message}`; }
 
     function saveDocument() {
-        if (!documentTitle || !JSON.stringify(quill.current.getEditor().editor.delta)) {
+        if (!documentTitle || !editorValue) {
             alert("Can't create a document without a title and/or content!");
             return;
+        }
+        let kind = "Document";
+
+        if (isCodeMode) {
+            kind = "Code";
+        }
+
+        let content;
+
+        if (isCodeMode) {
+            content = monacoEditor.current.getValue();
+        } else {
+            content = JSON.stringify(quill.current.getEditor().editor.delta);
         }
         if (id) {
             updateDocument({
                 variables: {
                     _id: id,
+                    kind: kind,
                     title: documentTitle,
-                    content: JSON.stringify(quill.current.getEditor().editor.delta),
+                    content: content,
                     comments: JSON.stringify(comments),
                 }
             });
@@ -320,7 +350,8 @@ function Editor({ token }) {
         createDocument({
             variables: {
                 title: documentTitle,
-                content: JSON.stringify(quill.current.getEditor().editor.delta),
+                kind: kind,
+                content: content,
                 comments: JSON.stringify(comments),
             }
         });
@@ -360,16 +391,45 @@ function Editor({ token }) {
         setComments(commentsCopy);
     };
 
+    const runCode = () => {
+        const data = {
+            code: btoa(monacoEditor.current.getValue())
+        };
+
+        fetch("https://execjs.emilfolino.se/code", {
+            body: JSON.stringify(data),
+            headers: {
+                'content-type': 'application/json'
+            },
+            method: 'POST'
+        })
+            .then(function (response) {
+                return response.json();
+            })
+            .then(function(result) {
+                let decodedOutput = atob(result.data);
+
+                alert(decodedOutput);
+            })
+            .catch(function(e) {
+                console.error(e);
+                alert("something went wrong :(");
+            });
+    };
+
     return (
         <>
             <Toolbar
+                isCodeMode={isCodeMode}
+                setCodeMode={setCodeMode}
                 save={saveDocument}
                 exportPDF={exportPDF}
                 comment={createComment}
+                runCode={runCode}
                 documentID={id}
                 token={token}
             />
-            <div className="main-pane">
+            <div className={`main-pane codemode-${isCodeMode}`}>
                 <div className="content">
                     {(createObj.data || updateObj.data) &&
                         !hideAlert &&
@@ -381,21 +441,35 @@ function Editor({ token }) {
                     {(createObj.loading || updateObj.loading) && <div>Submitting...</div>}
                     <input
                         type="text"
+                        placeholder="Document title"
                         value={documentTitle}
                         onChange={(e) => setDocumentTitle(e.target.value)}
                     />
-                    <ReactQuill
-                        ref={quill}
-                        theme="snow"
-                        value={editorValue}
-                        onChange={handleEditorChange}
-                    />
+                    { isCodeMode ?
+                        <CodeEditor
+                            height="inherit"
+                            theme="vs-dark"
+                            defaultLanguage="javascript"
+                            onMount={handleEditorDidMount}
+                            value={editorValue}
+                            onChange={setEditorValue}
+                        />
+                        :
+                        <ReactQuill
+                            ref={quill}
+                            theme="snow"
+                            value={editorValue}
+                            onChange={handleEditorChange}
+                        />
+                    }
                 </div>
-                <CommentList
-                    comments={comments}
-                    setSelection={setSelection}
-                    removeComment={removeComment}
-                />
+                { !isCodeMode &&
+                    <CommentList
+                        comments={comments}
+                        setSelection={setSelection}
+                        removeComment={removeComment}
+                    />
+                }
             </div>
         </>
     );
