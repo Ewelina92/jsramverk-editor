@@ -4,6 +4,8 @@ import { gql, useQuery, useMutation } from '@apollo/client';
 import PropTypes from 'prop-types';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { saveAs } from 'file-saver';
+import { pdfExporter } from 'quill-to-pdf';
 import Toolbar from "./Toolbar";
 import io from "socket.io-client";
 import CommentList from "./CommentList";
@@ -189,38 +191,48 @@ function Editor({ token }) {
         if (isCodeMode) {
             return;
         }
-        const controller = new AbortController();
-        const signal = controller.signal;
 
-        fetch(`${ENDPOINT}/pdf`, {
-            method: "POST",
-            signal: signal,
-            // Adding body or contents to send
-            body: JSON.stringify({
-                html: quill.current.getEditor().root.innerHTML,
-            }),
-            // Adding headers to the request
-            headers: {
-                "Content-type": "application/json; charset=UTF-8"
-            }
-        })
-            .then(res => res.arrayBuffer())
-            .then(res => {
-                const file = new Blob([res], {type: 'application/pdf'});
+        // local pdf generation instead of commented out backend route
 
-                const fileURL = URL.createObjectURL(file);
-                const link = document.createElement('a');
+        const delta = quill.current.getEditor().editor.delta; // get the Quill delta
+        const pdfAsBlob = await pdfExporter.generatePdf(delta); // convert to PDF
 
-                link.href = fileURL;
-                link.download = `${documentTitle}.pdf`;
-                link.click();
-            })
-            .catch(e => console.log(e));
+        saveAs(pdfAsBlob, `${documentTitle}.pdf`); // download from the browser
 
-        return function cleanup() {
-            // cancel fetch
-            controller.abort();
-        };
+        // const controller = new AbortController();
+        // const signal = controller.signal;
+
+        // fetch(`${ENDPOINT}/pdf`, {
+        //     method: "POST",
+        //     signal: signal,
+        //     // Adding body or contents to send
+        //     body: JSON.stringify({
+        //         html: quill.current.getEditor().root.innerHTML,
+        //     }),
+        //     // Adding headers to the request
+        //     headers: {
+        //         "Content-type": "application/json; charset=UTF-8"
+        //     }
+        // })
+        //     .then(res => res.arrayBuffer())
+        //     .then(res => {
+        //         const file = new Blob([res], {type: 'application/pdf'});
+
+        //         const fileURL = URL.createObjectURL(file);
+        //         const link = document.createElement('a');
+
+        //         link.href = fileURL;
+        //         link.download = `${documentTitle}.pdf`;
+        //         link.click();
+        //     })
+        //     .catch((e) => {
+        //         console.error(e);
+        //     });
+
+        // return function cleanup() {
+        //     // cancel fetch
+        //     controller.abort();
+        // };
     };
 
     const createComment = (commentText) => {
