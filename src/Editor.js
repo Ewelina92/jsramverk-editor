@@ -64,10 +64,12 @@ const CREATE_DOCUMENT = gql`
 `;
 
 const UPDATE_DOCUMENT = gql`
-  mutation updateDocument($_id: String!, $title: String!, $content: String!, $comments: String) {
-    updateDocument(_id: $_id, title: $title, content: $content, comments: $comments) {
+  mutation updateDocument($_id: String!,
+    $title: String!, $content: String!, $comments: String, $kind: String) {
+    updateDocument(_id: $_id, title: $title, content: $content, comments: $comments, kind: $kind) {
       _id
       title
+      kind
       content
       comments
     }
@@ -241,25 +243,32 @@ function Editor({ token }) {
     };
 
     const createComment = async (commentText) => {
+        // get selection from quill editor
         const selectionRange = quill.current.getEditorSelection();
 
+        // if no selection, return
         if (!selectionRange || selectionRange.length == 0) {
             return false;
         }
 
         const ops = [];
 
+        // if selection does not start at beginning of document
+        // keep text until selection the way it is
         if (selectionRange.index !== 0) {
             ops.push({ retain: selectionRange.index });
         }
 
+        // create comment object
         const newComment = {
             message: commentText,
             range: selectionRange,
         };
 
+        // send the new comment to other clients
         socketRef.current.emit("new_comment", newComment);
 
+        // the comment's selection gets a yellow background
         ops.push({
             retain: selectionRange.length,
             attributes: {
@@ -267,8 +276,10 @@ function Editor({ token }) {
             },
         });
 
+        // Update state of comments
         await setComments([...comments, newComment]);
 
+        // update editor with operations to turn background yellow
         quill.current.getEditor().updateContents({
             ops: ops,
         });
@@ -313,7 +324,9 @@ function Editor({ token }) {
     }, [createObj.data]);
 
     useEffect(() => {
+        // if it's not loading and there is data
         if (!loading && !!data) {
+            // don't load it again
             setSkipLoading(true);
             setCodeMode((data.document.kind !== "Document"));
             if (data.document.kind !== "Document") {
@@ -353,6 +366,7 @@ function Editor({ token }) {
             content = JSON.stringify(quill.current.getEditor().editor.delta);
         }
         if (id) {
+            console.log("kind", kind, isCodeMode);
             updateDocument({
                 variables: {
                     _id: id,
@@ -409,6 +423,7 @@ function Editor({ token }) {
     };
 
     const runCode = () => {
+        // turn editor value into base64 string
         const data = {
             code: btoa(monacoEditor.current.getValue())
         };
@@ -424,6 +439,7 @@ function Editor({ token }) {
                 return response.json();
             })
             .then(function(result) {
+                // base64 to regular string
                 let decodedOutput = atob(result.data);
 
                 alert(decodedOutput);
@@ -450,12 +466,13 @@ function Editor({ token }) {
                 <div className="content">
                     {(createObj.data || updateObj.data) &&
                         !hideAlert &&
-                        <div>
+                        <div className="savedDialog">
                             Saved!
                             <span onClick={() => setHideAlert(true)}>X</span>
                         </div>
                     }
-                    {(createObj.loading || updateObj.loading) && <div>Submitting...</div>}
+                    {(createObj.loading || updateObj.loading) && <div className="savedDialog">
+                        Submitting...</div>}
                     <input
                         type="text"
                         placeholder="Document title"

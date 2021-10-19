@@ -211,3 +211,23 @@ ul li a:hover {
   color: #d4d4d4;
   margin-bottom: 0.25rem;
 }
+
+.savedDialog {
+  background-color: #DBEAFE;
+  display: table;
+  padding: 0.25rem 0.75rem;
+  font-weight: 500;
+  border-radius: 8px;
+  margin-bottom: 0.25rem;
+}
+
+.savedDialog span {
+  margin-left: 0.5rem;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.codemode-true .savedDialog {
+  background-color: #1E3A8A;
+  color: #DBEAFE;
+}
