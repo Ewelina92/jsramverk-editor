@@ -171,7 +171,11 @@ function Editor({ token }) {
             }
         }
 
-        let commentsClone = [...comments];
+        let commentsClone = [];
+
+        if (comments != null) {
+            commentsClone = [...comments];
+        }
 
         for (let i = 0; i < commentsClone.length; i++) {
             if (commentsClone[i].range.index > from) {
@@ -179,6 +183,7 @@ function Editor({ token }) {
             }
         }
         setComments(commentsClone);
+
 
         // Update our last change
         setLastDelta(delta);
@@ -235,7 +240,7 @@ function Editor({ token }) {
         // };
     };
 
-    const createComment = (commentText) => {
+    const createComment = async (commentText) => {
         const selectionRange = quill.current.getEditorSelection();
 
         if (!selectionRange || selectionRange.length == 0) {
@@ -248,17 +253,6 @@ function Editor({ token }) {
             ops.push({ retain: selectionRange.index });
         }
 
-        ops.push({
-            retain: selectionRange.length,
-            attributes: {
-                background: '#ffffb0',
-            },
-        });
-
-        quill.current.getEditor().updateContents({
-            ops: ops,
-        });
-
         const newComment = {
             message: commentText,
             range: selectionRange,
@@ -266,7 +260,18 @@ function Editor({ token }) {
 
         socketRef.current.emit("new_comment", newComment);
 
-        setComments([...comments, newComment]);
+        ops.push({
+            retain: selectionRange.length,
+            attributes: {
+                background: '#ffffb0',
+            },
+        });
+
+        await setComments([...comments, newComment]);
+
+        quill.current.getEditor().updateContents({
+            ops: ops,
+        });
 
         return true;
     };
@@ -330,7 +335,7 @@ function Editor({ token }) {
     if (error) { return `Error! ${error.message}`; }
 
     function saveDocument() {
-        if (!documentTitle || !editorValue) {
+        if (!documentTitle || !(editorValue||quill.current.getEditor().editor.delta)) {
             alert("Can't create a document without a title and/or content!");
             return;
         }

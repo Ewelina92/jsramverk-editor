@@ -5,7 +5,15 @@ import { CheckIcon } from '@heroicons/react/solid';
 function CommentList({ comments, setSelection, removeComment }) {
     return (
         <ul className="CommentList">
-            {comments && comments.map((comment, index) =>
+            {comments && comments.sort((a, b) => {
+                if (a.range.index > b.range.index) {
+                    return 1;
+                }
+                if (a.range.index < b.range.index) {
+                    return -1;
+                }
+                return 0;
+            }).map((comment, index) =>
                 <li
                     key={index}
                     onClick={() => setSelection(comment.range)}
